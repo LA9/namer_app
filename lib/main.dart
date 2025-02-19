@@ -28,63 +28,160 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
-  void getNextRandomWord(){
-   current = WordPair.random();
-   notifyListeners();
-  }
-    var favorites = <WordPair>[];
+  var favorites = <WordPair>[];
 
-     void toggleFavorite() {
-    if (favorites.contains(current)) {
-      favorites.remove(current);
-    } else {
-      favorites.add(current);
-
-    }
+  void _notifyOnChange(void Function() func) {
+    func();
     notifyListeners();
   }
+
+
+  void getNextRandomWord() => _notifyOnChange(() {
+        current = WordPair.random();
+      });
+
+  void toggleFavorite() => _notifyOnChange(() {
+        if (favorites.contains(current)) {
+          favorites.remove(current);
+        } else {
+          favorites.add(current);
+        }
+      });
+
+  void removeFavoritesAt(int index) => _notifyOnChange(() {
+        favorites.removeAt(index);
+      });
 }
 
 // ...
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+// ...
+
+class _MyHomePageState extends State<MyHomePage> {
+  var selectedIndex = 0; // ← Add this property.
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Row(
-        children: [
-          SafeArea(
-            child: NavigationRail(
-              extended: false,
-              destinations: [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home),
-                  label: Text('Home'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.favorite),
-                  label: Text('Favorites'),
-                ),
-              ],
-              selectedIndex: 0,
-              onDestinationSelected: (value) {
-                print('selected: $value');
-              },
+
+    Widget page;
+    switch (selectedIndex) {
+      case 0:
+        page = GeneratorPage();
+        break;
+      case 1:
+        page = FavoritesPage();
+        break;
+      default:
+        throw UnimplementedError('no widget for $selectedIndex');
+    }
+    return LayoutBuilder(builder: (context, constraints) {
+      return Scaffold(
+        body: Row(
+          children: [
+            SafeArea(
+              child: NavigationRail(
+                extended: constraints.maxWidth >= 600,
+                destinations: [
+                  NavigationRailDestination(
+                    icon: Icon(Icons.home),
+                    label: Text('Home'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.favorite),
+                    label: Text('Favorites'),
+                  ),
+                ],
+                selectedIndex: selectedIndex, // ← Change to this.
+                onDestinationSelected: (value) {
+        
+                  // ↓ Replace print with this.
+                  setState(() {
+                    selectedIndex = value;
+                  });
+                },
+              ),
             ),
-          ),
-          Expanded(
-            child: Container(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              child: GeneratorPage(),
+            Expanded(
+              child: Container(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: page,
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      );
+    }
     );
   }
 }
 
+class FavoritesPage extends StatelessWidget {
+  const FavoritesPage({super.key});
 
+  @override
+  Widget build(BuildContext context) {
+    var theme = Theme.of(context);
+    var appState = context.watch<MyAppState>();
+    var favoritesList = appState.favorites;
+
+    if (favoritesList.isEmpty) {
+      return Center(
+        child: Text('No favorites yet.'),
+      );
+    }
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 30,
+        ),
+        Text("You have ${favoritesList.length} favorites"),
+        Expanded(
+          child: ListView.builder(
+              itemCount: favoritesList.length,
+              itemBuilder: (context, index) {
+                return Dismissible(
+                  key: Key(favoritesList[index].toString()),
+                  onDismissed: (direction) {
+                    appState.removeFavoritesAt(index);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                        left: 4.0, right: 4.0, bottom: 15.0),
+                    child: Card(
+                      color: theme.secondaryHeaderColor,
+                      child: Column(
+                        children: [
+                          ListTile(
+                            title: Text(
+                              favoritesList[index].asPascalCase,
+                              textAlign: TextAlign.center,
+                            ),
+                            trailing: IconButton(
+                                icon: Icon(Icons.delete,
+                                    size: 20, color: Colors.red),
+                                onPressed: () {
+                                  appState.removeFavoritesAt(index);
+                                }),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+        ),
+      ],
+    );
+  }
+}
+
+// ...
 class GeneratorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -148,7 +245,8 @@ class BigCard extends StatelessWidget {
       color: theme.colorScheme.primary,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Text(pair.asPascalCase , style:style , semanticsLabel: "${pair.first} ${pair.second}"),
+          child: Text(pair.asPascalCase,
+              style: style, semanticsLabel: "${pair.first} ${pair.second}"),
       ),
     );
   }
