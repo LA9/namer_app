@@ -48,7 +48,7 @@ class MyAppState extends ChangeNotifier {
         }
       });
 
-  void removeFavoritesAt(int index) => _notifyOnChange(() {
+  void removeFavoriteAt(int index) => _notifyOnChange(() {
         favorites.removeAt(index);
       });
 }
@@ -63,19 +63,18 @@ class MyHomePage extends StatefulWidget {
 // ...
 
 class _MyHomePageState extends State<MyHomePage> {
-  var selectedIndex = 0; // ← Add this property.
+  var selectedIndex = 0; 
 
   @override
+
   Widget build(BuildContext context) {
 
     Widget page;
     switch (selectedIndex) {
       case 0:
         page = GeneratorPage();
-        break;
       case 1:
         page = FavoritesPage();
-        break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
@@ -96,10 +95,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     label: Text('Favorites'),
                   ),
                 ],
-                selectedIndex: selectedIndex, // ← Change to this.
+                selectedIndex: selectedIndex,
                 onDestinationSelected: (value) {
-        
-                  // ↓ Replace print with this.
+                  
                   setState(() {
                     selectedIndex = value;
                   });
@@ -140,7 +138,7 @@ class FavoritesPage extends StatelessWidget {
         SizedBox(
           height: 30,
         ),
-        Text("You have ${favoritesList.length} favorites"),
+        Text("You have ${favoritesList.length} favorite words"),
         Expanded(
           child: ListView.builder(
               itemCount: favoritesList.length,
@@ -148,7 +146,7 @@ class FavoritesPage extends StatelessWidget {
                 return Dismissible(
                   key: Key(favoritesList[index].toString()),
                   onDismissed: (direction) {
-                    appState.removeFavoritesAt(index);
+                    appState.removeFavoriteAt(index);
                   },
                   child: Padding(
                     padding: const EdgeInsets.only(
@@ -166,7 +164,7 @@ class FavoritesPage extends StatelessWidget {
                                 icon: Icon(Icons.delete,
                                     size: 20, color: Colors.red),
                                 onPressed: () {
-                                  appState.removeFavoritesAt(index);
+                                  appState.removeFavoriteAt(index);
                                 }),
                           ),
                         ],
